@@ -8,3 +8,6 @@ scikit-learn
 tqdm
 captum
 einops
+plotly
+kaleido
+

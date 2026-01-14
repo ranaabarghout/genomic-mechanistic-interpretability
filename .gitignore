@@ -1,0 +1,41 @@
+# Data files
+root/
+*.gz
+*.fa
+*.fai
+
+# Outputs
+outputs/
+checkpoint_analysis/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Model checkpoints
+*.pt
+*.pth
+*.ckpt
+
+# Large HTML files
+*.html
