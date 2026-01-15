@@ -1,0 +1,32 @@
+\begin{thebibliography}{1}
+
+\bibitem{ji2021dnabert}
+Yanrong Ji, Zhihan Zhou, Han Liu, and Ramana~V Davuluri.
+\newblock Dnabert: pre-trained bidirectional encoder representations from
+  transformers model for dna-language in genome.
+\newblock {\em Bioinformatics}, 37(15):2112--2120, 2021.
+
+\bibitem{zhou2023dnabert2}
+Zhihan Zhou, Yanrong Ji, Weijian Li, Pratik Dutta, Ramana Davuluri, and Han
+  Liu.
+\newblock Dnabert-2: Efficient foundation model and benchmark for multi-species
+  genome.
+\newblock {\em arXiv preprint arXiv:2306.15006}, 2023.
+
+\bibitem{zhang2024gvrep}
+Zehui Li, Vallijah Subasri, Guy-Bart Stan, Yiren Zhao, and Bo~Wang.
+\newblock Gv-rep: A large-scale dataset for genetic variant representation
+  learning, 2024.
+
+\bibitem{carithers2015gtex}
+Latarsha~J Carithers and Helen~M Moore.
+\newblock The genotype-tissue expression (gtex) project.
+\newblock {\em Biopreservation and Biobanking}, 13(5):307, 2015.
+
+\bibitem{gtex2020}
+GTEx Consortium.
+\newblock The gtex consortium atlas of genetic regulatory effects across human
+  tissues.
+\newblock {\em Science}, 369(6509):1318--1330, 2020.
+
+\end{thebibliography}

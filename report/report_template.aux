@@ -1,0 +1,56 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{ji2021dnabert}
+\citation{ji2021dnabert}
+\citation{zhou2023dnabert2}
+\citation{ji2021dnabert}
+\citation{ji2021dnabert}
+\citation{zhang2024gvrep}
+\citation{carithers2015gtex,gtex2020}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Methods}{1}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Model and Data}{1}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Attention Analysis}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Activation Patching}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Sparse Autoencoder}{2}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Results}{2}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Attention Patterns}{2}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {Attention statistics for eQTL sequences.} \emph  {Top:} Entropy, variance, and maximum CLS attention per head and layer quantify how focused and structured each head is. Mid-to-late layers exhibit more peaked, organized attention. \emph  {Bottom:} \(-\qopname  \relax o{log}_{10}p\) values and Cohen’s \(d\) for CLS-to-variant attention comparing significant vs non-significant eQTLs show that class differences are weak and noisy across heads.\relax }}{2}{figure.caption.2}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:attention_stats}{{1}{2}{\textbf {Attention statistics for eQTL sequences.} \emph {Top:} Entropy, variance, and maximum CLS attention per head and layer quantify how focused and structured each head is. Mid-to-late layers exhibit more peaked, organized attention. \emph {Bottom:} \(-\log _{10}p\) values and Cohen’s \(d\) for CLS-to-variant attention comparing significant vs non-significant eQTLs show that class differences are weak and noisy across heads.\relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Activation Patching}{2}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Sparse Autoencoder Features}{2}{subsection.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {Position-resolved CLS attention for two representative eQTL heads.} \emph  {Top:} Head L7H5 appears highly significant by scalar metrics but attends almost exclusively to [CLS] and the final token, indicating a degenerate pattern. \emph  {Bottom:} A typical head (L0H0) spreads attention broadly across the sequence with overlapping class means, consistent with diffuse encoding.\relax }}{3}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:head_full}{{2}{3}{\textbf {Position-resolved CLS attention for two representative eQTL heads.} \emph {Top:} Head L7H5 appears highly significant by scalar metrics but attends almost exclusively to [CLS] and the final token, indicating a degenerate pattern. \emph {Bottom:} A typical head (L0H0) spreads attention broadly across the sequence with overlapping class means, consistent with diffuse encoding.\relax }{figure.caption.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Attention statistics for sQTL sequences.} Entropy, variance, and CLS-to-variant attention show the same mid-layer band of structured heads as in eQTLs, but with weak and noisy class-conditional effects and no heads specialized for splice-regulatory motifs.\relax }}{3}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:sqtl_attention}{{3}{3}{\textbf {Attention statistics for sQTL sequences.} Entropy, variance, and CLS-to-variant attention show the same mid-layer band of structured heads as in eQTLs, but with weak and noisy class-conditional effects and no heads specialized for splice-regulatory motifs.\relax }{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Discussion}{3}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Experimental and mechanistic validation.}{3}{section*.6}\protected@file@percent }
+\bibstyle{unsrt}
+\bibdata{references}
+\bibcite{ji2021dnabert}{{1}{}{{}}{{}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Top sparse autoencoder features for eQTL CLS embeddings.} Features 1428 and 140 exhibit the largest mean activation and differential activation across classes, yet their distributions overlap substantially, indicating that even the most informative SAE units encode only weak class separation rather than discrete regulatory motifs.\relax }}{4}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:eqtl_features}{{4}{4}{\textbf {Top sparse autoencoder features for eQTL CLS embeddings.} Features 1428 and 140 exhibit the largest mean activation and differential activation across classes, yet their distributions overlap substantially, indicating that even the most informative SAE units encode only weak class separation rather than discrete regulatory motifs.\relax }{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{4}{section.5}\protected@file@percent }
+\bibcite{zhou2023dnabert2}{{2}{}{{}}{{}}}
+\bibcite{zhang2024gvrep}{{3}{}{{}}{{}}}
+\bibcite{carithers2015gtex}{{4}{}{{}}{{}}}
+\bibcite{gtex2020}{{5}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
+\gdef \@abspage@last{5}

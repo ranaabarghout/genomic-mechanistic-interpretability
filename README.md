@@ -28,6 +28,14 @@ cd ../
 git clone https://github.com/ranaabarghout/genomic-FM.git
 ```
 
+### Data Setup
+
+**Important:** Before running any analyses in this repository, you must first download the genomic datasets using the instructions in the [**genomic-FM repository**](https://github.com/ranaabarghout/genomic-FM). The genomic-FM repository contains the data download and preprocessing pipeline and will populate the `root/data/` directory with the necessary files.
+
+The DNA-BERT-6 model will be automatically downloaded from Hugging Face (`zhihan1996/DNA_bert_6`) on first run.
+
+**Refer to the [genomic-FM repository](https://github.com/ranaabarghout/genomic-FM) for complete data download and preprocessing instructions.**
+
 ### Basic Usage
 
 **Run complete analysis on sQTL data (1000 samples):**
