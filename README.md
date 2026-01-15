@@ -17,7 +17,7 @@ Mechanistic interpretability analysis of genomic foundation models using attenti
 
 ```bash
 # Clone repository
-git clone <repo-url>
+git clone https://github.com/ranaabarghout/genomic-mechanistic-interpretability.git
 cd genomic-mechanistic-interpretability
 
 # Install dependencies
@@ -127,7 +127,7 @@ Results are saved to `outputs/<dataset>_analysis/analysis_<timestamp>/`
 - DNA-BERT-6 model (zhihan1996/DNA_bert_6, auto-downloaded)
 - genomic-FM repository (for data loaders)
 
-See `requirements.txt` for full dependencies.
+See `requirements.txt` for full dependencies. Please also see the genomic-FM dependency instructions for additional packages that might be needed!
 
 ## Citation
 
