@@ -2,6 +2,7 @@
 \usepackage[margin=0.75in]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{hyperref}
 \usepackage{booktabs}
 \usepackage{caption}
@@ -11,237 +12,191 @@
 \title{\textbf{Mechanistic Interpretability of DNABERT-2 for\\Splice-QTL Classification}}
 
 \author{
-Your Name\\
-Institution\\
-\texttt{your.email@institution.edu}
+Rana A. Barghout\\
+University of Toronto\\
+\texttt{rana.barghout@mail.utoronto.ca}
 }
 
 \date{\today}
 
 \begin{document}
-
 \maketitle
 
 \begin{abstract}
-We present a comprehensive mechanistic interpretability analysis of DNABERT-2, a 117M parameter genomic foundation model, applied to splice-QTL (sQTL) classification. Using four complementary approaches—attention visualization, activation patching, circuit analysis, and sparse autoencoders—we identify the computational mechanisms by which the model distinguishes functional genetic variants. Our analysis reveals that (1) attention concentrates on variant positions and flanking splice sites, (2) layers 8-11 are causally critical for classification, (3) five distinct functional circuits specialize in variant processing, and (4) interpretable latent features capture biologically meaningful sequence patterns. These findings provide mechanistic insights into how genomic foundation models process genetic variants and suggest interpretability-guided approaches for model improvement.
+We present a mechanistic interpretability analysis of DNABERT-2, a 117M parameter genomic foundation model, applied to splice-QTL (sQTL) and expression-QTL (eQTL) classification. Using attention analysis, activation patching, circuit-style head grouping, and sparse autoencoder (SAE) feature analysis, we probe how the model distinguishes significant from non-significant variants. Attention statistics and per-head metrics reveal that early–mid layers contain heads whose attention to the variant token differs systematically by class, while late layers show strong but class-agnostic integration. Activation patching demonstrates that only the final transformer layer is causally important for the sequence-level representation, with position-based patching indicating that information is spatially distributed at that stage. Circuit-style clustering and ablation suggest a largely distributed representation across heads, whereas SAE features identify a small number of latent directions with modest but consistent class-dependent shifts. Overall, the model appears to encode QTL-relevant signals in a diffuse manner, with late-layer bottlenecks but without sharply localized circuits or strongly class-specific heads, highlighting both the power and limitations of mechanistic tools for current genomic FMs.
 \end{abstract}
 
 \section{Introduction}
 
 \subsection{Motivation}
-Genomic foundation models have achieved state-of-the-art performance on variant effect prediction tasks \cite{zhou2023dnabert2}, yet their internal mechanisms remain opaque. Understanding \emph{how} these models make predictions is critical for (1) validating biological plausibility, (2) identifying failure modes, and (3) guiding model improvements.
+Genomic foundation models such as DNABERT-2 achieve strong performance on variant effect prediction tasks, but their internal computation is largely opaque. Understanding \emph{how} these models represent and propagate variant information is important for assessing biological plausibility, diagnosing failure modes, and designing more interpretable architectures.
 
 \subsection{Problem Statement}
-We investigate: \textbf{What computational mechanisms does DNABERT-2 use to classify splice-QTL significance?} Specifically:
+We ask: \textbf{What computational mechanisms does DNABERT-2 use to classify QTL significance?} Specifically:
 \begin{itemize}
-    \item Which sequence positions does the model attend to?
-    \item Which layers and attention heads are causally important?
-    \item Do functional circuits coordinate variant processing?
-    \item What interpretable features distinguish variant classes?
+    \item How do attention heads treat the variant position across layers and classes?
+    \item Which layers materially affect the high-level representation when intervened upon?
+    \item Do groups of heads behave as functional ``circuits'' that differentially support classes?
+    \item Are there sparse latent features whose activations differ between significant and non-significant variants?
 \end{itemize}
 
 \subsection{Approach}
-We apply four mechanistic interpretability methods to DNABERT-2:
+We analyze a pretrained DNABERT-2 model with a frozen encoder and a simple classifier head. Our pipeline combines:
 \begin{enumerate}
-    \item \textbf{Attention Visualization}: Identify focus patterns
-    \item \textbf{Activation Patching}: Establish causal importance
-    \item \textbf{Circuit Analysis}: Discover coordinated components
-    \item \textbf{Sparse Autoencoders}: Extract interpretable features
+    \item \textbf{Attention analysis}: per-head entropy/variance and class-conditioned attention to the variant token (Fig.~\ref{fig:attention_stats}).
+    \item \textbf{Activation patching}: layer-wise and position-wise causal interventions on hidden states (Figs.~\ref{fig:layer_patching}, \ref{fig:position_patching}).
+    \item \textbf{Circuit-style analysis}: clustering heads by behavior and testing head/layer ablations (Figs.~\ref{fig:head_importance}, \ref{fig:circuit_ablation}).
+    \item \textbf{Sparse autoencoders}: training an SAE on late-layer activations and comparing feature activations by class (Figs.~\ref{fig:feature_overview}–\ref{fig:feature_examples}).
 \end{enumerate}
 
 \section{Methods}
 
 \subsection{Model and Data}
+\textbf{Model}: DNABERT-2-117M, a 12-layer transformer pretrained on multi-species genomes with 6-mer tokenization.
 
-\textbf{Model}: DNABERT-2-117M \cite{zhou2023dnabert2}, a 12-layer transformer pretrained on multi-species genomes using byte-pair encoding with 6-mer tokenization (vocab size: 4,096).
+\textbf{Datasets}: We focus on GTEx v8 splice-QTL (sQTL) and expression-QTL (eQTL) subsets derived from the GV-Rep framework. Each example consists of a 1024\,bp reference sequence centered on the variant and a binary label (significant vs non-significant QTL). For mechanistic analysis we subsample 30–50 variants per class (for both eQTL and sQTL tasks) to allow exhaustive logging and patching. Qualitative patterns were consistent across tasks, so the main figures focus on eQTL, with sQTL results available in the repository. [file:61]
 
-\textbf{Dataset}: GTEx v8 splice-QTL data \cite{gtex2020}, Whole Blood tissue:
+\textbf{Training}: A simple CNN-based classifier head is trained on top of the frozen DNABERT-2 encoder; all interpretability analyses operate on the encoder activations.
+
+\subsection{Attention Analysis}
+We run the model with \texttt{output\_attentions=True} and extract attention tensors
+$A_{l,h} \in \mathbb{R}^{L \times L}$ for each layer $l$ and head $h$. For each head we compute:
 \begin{itemize}
-    \item 7,500 variants (3,180 significant, 4,320 not significant)
-    \item 1024bp sequences (reference and alternate alleles)
-    \item Binary classification: significant sQTL effect vs not
+    \item Entropy of the attention from the [CLS] token across positions (focus vs diffusion).
+    \item Variance and maximum attention from [CLS] across positions (structuredness and peak strength).
+    \item For each class, the mean attention from a query token (either [CLS] or the variant token) to the variant token, yielding per-head $p$-values and effect sizes (Fig.~\ref{fig:attention_stats}). [file:36][file:40]
 \end{itemize}
 
-\textbf{Note}: Analysis performed on base pretrained DNABERT-2. Fine-tuned model used frozen BERT encoder with trainable CNN head only.
-
-\subsection{Interpretability Methods}
-
-\subsubsection{Attention Visualization}
-We extract attention weights from all 12 layers and 12 heads:
-\begin{equation}
-A_{l,h} = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)
-\end{equation}
-where $A_{l,h} \in \mathbb{R}^{L \times L}$ for layer $l$ and head $h$. We compute:
+\subsection{Activation Patching}
+For pairs of significant and non-significant variants, we perform representation-level activation patching. For a given layer $l$, we replace the hidden state of one example with that of another and measure the change in final representation via an $L_2$ distance. We compute:
 \begin{itemize}
-    \item Mean attention to variant position
-    \item Attention entropy (focus vs diffuse)
-    \item Class-wise attention differences
+    \item \textbf{Layer-wise patching}: patch the entire layer output across all positions (Fig.~\ref{fig:layer_patching}). [file:63]
+    \item \textbf{Position-wise patching}: within the most sensitive layer, patch a 20-token window sliding across the sequence (Fig.~\ref{fig:position_patching}). [file:60]
 \end{itemize}
 
-\subsubsection{Activation Patching}
-Causal intervention \cite{vig2020causal}: patch activations from sequence $x_{\text{corrupt}}$ into $x_{\text{clean}}$ at component $c$:
-\begin{equation}
-\text{Effect}(c) = \|f(x_{\text{clean}}) - f(x_{\text{patched}}^{(c)})\|_2
-\end{equation}
-where $f$ is final representation. High effect indicates causal importance.
-
-We test:
+\subsection{Circuit-style Analysis}
+We summarize attention-head behavior across samples (mean attention to variant, entropy, and importance scores derived from ablations) and cluster heads into groups. We then:
 \begin{itemize}
-    \item Layer-wise patching (13 layers including embeddings)
-    \item Position-based patching (20-token window around variant)
-    \item Attention head patching (144 heads total)
+    \item Visualize per-layer head ``importance'' scores for each class and their differences (Fig.~\ref{fig:head_importance}). [file:64]
+    \item Perform layer and head ablations by zeroing outputs and measuring accuracy and loss changes (Fig.~\ref{fig:circuit_ablation}). [file:49][file:50]
 \end{itemize}
 
-\subsubsection{Circuit Analysis}
-Following \cite{cammarata2020circuits}, we identify functional circuits:
-\begin{enumerate}
-    \item Compute attention correlation matrix across samples
-    \item Cluster heads via k-means ($k=5$)
-    \item Quantify differential activation by class
-    \item Validate via systematic ablation
-\end{enumerate}
-
-\subsubsection{Sparse Autoencoders}
-Train overcomplete SAE \cite{sharkey2022sae} on layer 12 activations:
-\begin{align}
-\mathbf{z} &= \text{ReLU}(W_{\text{enc}}\mathbf{h} + b_{\text{enc}}) \\
-\hat{\mathbf{h}} &= W_{\text{dec}}\mathbf{z} + b_{\text{dec}}
-\end{align}
-with sparsity penalty:
-\begin{equation}
-\mathcal{L} = \|\mathbf{h} - \hat{\mathbf{h}}\|_2^2 + \lambda \|\mathbf{z}\|_1
-\end{equation}
-Parameters: $d_{\text{hidden}}=2048$, $\lambda=0.1$, 50 epochs.
+\subsection{Sparse Autoencoder Analysis}
+We collect late-layer activations (layer 12, [CLS] token) across QTL examples and train an overcomplete ReLU SAE with 2048 features and an $L_1$ sparsity penalty. For each feature we compute:
+\begin{itemize}
+    \item Mean activation in each class and the difference $\Delta = \mu_{\text{sig}} - \mu_{\text{non-sig}}$.
+    \item Sparsity (fraction of activations below a small threshold).
+\end{itemize}
+We then examine the global distribution of $\Delta$ and inspect a few top differential features in detail (Figs.~\ref{fig:feature_overview}–\ref{fig:feature_examples}). [file:67][file:68][file:69][file:65][file:70]
 
 \section{Results}
 
 \subsection{Attention Patterns}
+Fig.~\ref{fig:attention_stats} summarizes attention behavior. The per-head entropy and variance heatmaps (left, middle) show that early–mid layers (1–4) contain heads with lower entropy and higher variance, indicating more structured and concentrated attention compared to deeper layers, which become more diffuse and uniform. [file:39]
 
-\textbf{Variant Focus}: Attention to variant position is $2.3\times$ higher in significant vs not significant sQTLs ($p < 10^{-6}$, t-test).
+Class-conditioned attention statistics reveal modest but consistent differences. When measuring attention from [CLS] to the variant token, several heads in layers 4–7 and 11 show statistically significant differences between classes with Cohen's $d$ values up to $\sim\pm 1.0$ (Fig.~\ref{fig:attention_stats}A–B). [file:36] Using the variant token as the query yields a similar pattern with a slightly different subset of layers (notably layer 6) showing stronger class separation (Fig.~\ref{fig:attention_stats}C–D). [file:40] Example attention maps for one such head (L6H11) reveal that attention mass is concentrated in a left positional band and that attention along the variant column differs subtly between significant and non-significant examples (Fig.~\ref{fig:head_example}). [file:38]
 
-\textbf{Layer Specialization}: Layers 8-11 show strongest differential attention (Fig. \ref{fig:attention}). Early layers (1-4) attend broadly; late layers focus on variant-proximal regions.
-
-\textbf{Head Specialization}: 5 heads (L9H3, L10H7, L11H1, L11H5, L11H11) show $>3\times$ concentration difference between classes.
-
-% Placeholder for figure
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{placeholder_attention.pdf}
-\caption{Attention patterns by class. (A) Mean attention to variant position across layers. (B) Differential attention heatmap. (C) Example attention maps for significant vs not significant sQTL.}
-\label{fig:attention}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/attention/1_per_head_behavior.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/attention/2_variant_attention_stats_cls.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/attention/2_variant_attention_stats_variant.png}
+\caption{\textbf{Attention statistics.} Top: entropy, variance, and max attention per head and layer. Middle: $-{\log}_{10}(p)$ and effect sizes for attention from [CLS] to the variant token. Bottom: same statistics using the variant token as the query.}
+\label{fig:attention_stats}
 \end{figure}
 
-\subsection{Causal Components}
-
-\textbf{Layer Importance}: Layers 8, 9, 10, 11 show highest patching effects ($\Delta = 12.4, 14.7, 15.2, 13.8$), indicating these layers encode features critical for classification (Fig. \ref{fig:patching}).
-
-\textbf{Position Importance}: Patching within $\pm 50$bp of variant causes $3.6\times$ larger representation change than distant positions ($p < 10^{-8}$).
-
-\textbf{Head Contributions}: Top 10 most important heads (by ablation effect) localize to layers 9-11, consistent with attention analysis.
-
-% Placeholder for figure
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{placeholder_patching.pdf}
-\caption{Activation patching results. (A) Layer-wise patching effects. (B) Position-based patching heatmap. (C) Causal trace through model layers.}
-\label{fig:patching}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/attention/3_head_L3H9_examples.png}
+\caption{Example attention maps for head L3H9 across significant (top) and non-significant (bottom) variants. Dashed lines mark the variant token.}
+\label{fig:head_example}
 \end{figure}
 
-\subsection{Functional Circuits}
+\subsection{Activation Patching and Information Flow}
+Layer-wise patching shows a striking bottleneck: intervening on layers 0–11 has negligible impact on the final representation, while patching the final transformer layer (layer 12) produces a large reduction in the distance between patched and clean representations across all sample pairs (Fig.~\ref{fig:layer_patching}). [file:63] This indicates that the classifier is largely sensitive to information integrated in the very last layer.
 
-\textbf{Circuit Discovery}: Identified 5 circuits (C0-C4) with distinct activation profiles:
-\begin{itemize}
-    \item \textbf{C0} (23 heads): Strongly activates for significant sQTLs ($\Delta = +0.42$)
-    \item \textbf{C1} (31 heads): Balanced activation
-    \item \textbf{C2} (28 heads): Weakly differential ($\Delta = +0.08$)
-    \item \textbf{C3} (35 heads): Activates for not significant ($\Delta = -0.31$)
-    \item \textbf{C4} (27 heads): Late-layer specialization
-\end{itemize}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/activation_patching/analysis_20260114_105520/1_layer_patching_effects.png}
+\caption{\textbf{Layer-wise activation patching.} Mean distance reduction across 20 significant/non-significant pairs when patching each layer's output. Only the final layer shows a strong effect.}
+\label{fig:layer_patching}
+\end{figure}
 
-\textbf{Ablation}: Removing C0 reduces significant sQTL classification accuracy by 18\%; removing C3 reduces not significant accuracy by 14\%.
+Position-based patching within layer 12 yields a nearly flat effect across the 20-token window around the variant (Fig.~\ref{fig:position_patching}), suggesting that by the final layer, variant information is spatially distributed rather than localized to a single token. [file:60] Causal trace plots of activation norms and sparsity across layers (Fig.~\ref{fig:causal_traces}) show a rapid increase in activation magnitude between the embedding layer and layer~1, followed by stable norms and gradually decreasing sparsity, consistent with early amplification and later refinement. [file:62]
 
-\subsection{Interpretable Features}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/activation_patching/analysis_20260114_105520/2_position_patching_effects.png}
+\caption{\textbf{Position-based patching within layer 12.} Top: heatmap of effects across positions. Bottom: effect as a function of genomic position for top three layers. The layer-12 curve is flat across the variant window.}
+\label{fig:position_patching}
+\end{figure}
 
-\textbf{Feature Discovery}: SAE extracted 2048 features with 82\% mean sparsity, indicating selective activation.
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/activation_patching/analysis_20260114_105520/4_causal_traces.png}
+\caption{Information flow and sparsity across layers for representative significant examples. Activation norms plateau early, while sparsity decreases gradually.}
+\label{fig:causal_traces}
+\end{figure}
 
-\textbf{Differential Features}: 347 features show $|\Delta| > 0.1$ between classes:
-\begin{itemize}
-    \item 189 favor significant sQTLs (e.g., F42, F156, F891)
-    \item 158 favor not significant sQTLs (e.g., F23, F578, F1203)
-\end{itemize}
+\subsection{Head Importance and Circuit-style Ablation}
+Head-importance heatmaps (Fig.~\ref{fig:head_importance}A–B) show similar concentration scores for significant and non-significant eQTLs, with slightly higher values in early layers for significant variants. The differential map (Fig.~\ref{fig:head_importance}C) exhibits small, noisy differences on the order of $10^{-4}$, implying that no single head or layer exhibits strong class-specific concentration. [file:64] An analogous analysis for sQTLs shows nearly identical patterns, which can be observed in the repository.
 
-\textbf{Feature Interpretability}: Top differential features activate selectively for sequences with:
-\begin{itemize}
-    \item Canonical splice sites (GT-AG)
-    \item Branch point motifs (YURAY)
-    \item Polypyrimidine tracts
-    \item Exonic splicing enhancers (ESEs)
-\end{itemize}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/activation_patching/analysis_20260114_105520/3_attention_head_importance.png}
+\caption{\textbf{Head importance.} Left: importance scores by layer and head for significant eQTLs. Middle: same for non-significant eQTLs. Right: difference (significant minus non-significant).}
+\label{fig:head_importance}
+\end{figure}
+
+Clustering heads into candidate circuits and ablating them reveals a largely distributed representation. Circuit-level ablations produce nearly identical, very small changes in performance across circuits (Fig.~\ref{fig:circuit_ablation}A–B), and layer/head ablation plots show modest and relatively uniform effects across components (Fig.~\ref{fig:circuit_ablation}C–D). [file:48][file:47][file:49][file:50] This suggests that, unlike some language-model settings, DNABERT-2 does not exhibit a few sharply delineated circuits for this task; instead, many heads share responsibility.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/circuit_analysis/analysis_20260114_105524/1_discovered_circuits.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/circuit_analysis/analysis_20260114_105524/4_circuit_ablation.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/circuit_analysis/analysis_20260114_105524/2_layer_ablation.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/circuit_analysis/analysis_20260114_105524/3_head_ablation.png}
+\caption{\textbf{Circuit-style analysis and ablation.} Top: discovered circuits and their sizes/activations. Middle: circuit-level ablation effects. Bottom: layer and head ablation effects, showing broadly distributed contributions.}
+\label{fig:circuit_ablation}
+\end{figure}
+
+\subsection{Sparse Autoencoder Features}
+The SAE learns 2048 features with high sparsity; most features are near-inactive for the majority of examples. The global distribution of class-differential activations is sharply centered near zero with a narrow spread (Fig.~\ref{fig:feature_overview}A), and sparsity vs differential activation reveals only a handful of features with both low sparsity and non-trivial activation shifts (Fig.~\ref{fig:feature_overview}B). The top 20 features by $|\Delta|$ show small but consistent mean differences between classes (Fig.~\ref{fig:feature_overview}C–D). [file:68][file:67] For sQTLs, features 1642, 1711, and 1745 show similarly small but consistent shifts between classes (see figure in repository).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/sparse_autoencoder/analysis_20260114_105529/2_feature_analysis.png}
+\caption{\textbf{SAE feature overview.} Top-left: distribution of activation differences between classes. Top-right: top 20 most differential features. Bottom-left: sparsity vs differential activation. Bottom-right: mean activations by class for the same features.}
+\label{fig:feature_overview}
+\end{figure}
+
+Individual feature distributions illustrate the effect sizes. Feature 497, for example, has higher median activation in significant variants with relatively little overlap in the tails (Fig.~\ref{fig:feature_examples}A), whereas feature 912 shows a smaller shift with strongly overlapping histograms (Fig.~\ref{fig:feature_examples}B). Feature 658 shows the opposite pattern, being slightly more active in non-significant variants (Fig.~\ref{fig:feature_examples}C). [file:69][file:70][file:65] While we do not yet map these features back to concrete sequence motifs, the modest yet consistent class dependence suggests they encode variant-relevant directions in the late-layer representation.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/sparse_autoencoder/analysis_20260114_105529/feature_497_distribution.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/sparse_autoencoder/analysis_20260114_105529/feature_912_distribution.png}
+\includegraphics[width=\columnwidth]{../outputs/eqtl_analysis/analysis_20260114_105453/sparse_autoencoder/analysis_20260114_105529/feature_658_distribution.png}
+\caption{\textbf{Example SAE features.} For features 497, 912, and 658, we show histograms and boxplots of activations for significant and non-significant variants.}
+\label{fig:feature_examples}
+\end{figure}
 
 \section{Discussion}
 
-\subsection{Biological Interpretation}
-
-Our mechanistic analysis reveals DNABERT-2 implements a hierarchical processing pipeline:
-
-\textbf{Early Layers (1-4)}: Detect local sequence motifs (k-mers, dinucleotides). Attention is diffuse and context-independent.
-
-\textbf{Middle Layers (5-8)}: Integrate motifs into higher-order patterns. Attention begins concentrating on variant position.
-
-\textbf{Late Layers (9-12)}: Make classification decisions based on learned features. Attention highly focused on variant and splice-proximal regions.
-
-This aligns with known splicing biology: sQTLs affect splicing by disrupting splice sites, branch points, or regulatory elements—precisely the features identified by our SAE.
-
-\subsection{Comparison to Prior Work}
-
-\textbf{Attention Patterns}: Consistent with \cite{avsec2021enformer} showing genomic models focus on functional elements. Novel contribution: quantitative comparison by variant class.
-
-\textbf{Circuit Analysis}: First identification of functional circuits in genomic foundation models. Analogous to circuits found in language models \cite{elhage2021mathematical}.
-
-\textbf{SAE Features}: Extends \cite{sharkey2022sae} to genomic domain. Features are more interpretable than raw activations, enabling biological validation.
-
-\subsection{Limitations}
-
-\textbf{Model Architecture}: Analysis performed on base DNABERT-2. Fine-tuned model used frozen encoder, preventing analysis of task-specific attention learning.
-
-\textbf{Causal Claims}: Activation patching provides correlational evidence; true causality requires intervention experiments (e.g., retraining with ablated components).
-
-\textbf{Feature Validation}: SAE features require experimental validation (e.g., mutagenesis, reporter assays) to confirm biological relevance.
-
-\textbf{Generalization}: Analysis limited to Whole Blood sQTLs. Findings may not generalize to other tissues, cell types, or variant classes.
-
-\subsection{Future Directions}
-
-\textbf{Experimental Validation}: Use identified features to predict effects of novel variants; validate with functional assays.
-
-\textbf{Model Improvement}:
+\subsection{Mechanistic Picture}
+Taken together, the results suggest a model with:
 \begin{itemize}
-    \item Fine-tune with unfrozen encoder to learn task-specific attention
-    \item Use circuit discovery to guide architecture search
-    \item Regularize training to encourage interpretable features
+    \item \textbf{Early amplification}: activation norms increase rapidly in the first few layers, with some attention heads exhibiting structured patterns and mild class differences at the variant token.
+    \item \textbf{Diffuse mid-layer processing}: attention and head-importance maps show relatively small class-conditional differences, indicating that variant information is spread across many heads.
+    \item \textbf{Late bottleneck}: only the final transformer layer is strongly causally relevant under activation patching, and position-based patching within that layer indicates spatially distributed information.
+    \item \textbf{Weakly class-dependent features}: SAE features show small but real shifts in activation distributions between classes, implying the presence of QTL-sensitive directions that are nevertheless highly entangled.
 \end{itemize}
 
-\textbf{Broader Applications}:
-\begin{itemize}
-    \item Apply to other variant effect prediction tasks
-    \item Extend to multiple tissues and cell types
-    \item Compare mechanisms across different genomic models
-\end{itemize}
+\subsection{Limitations and Opportunities}
+Our circuit discovery method, based on simple clustering of head-level statistics, yields large, diffuse circuits rather than compact functional subgraphs, reflecting both methodological limitations and the distributed nature of DNABERT-2's representations for this task. Mapping SAE features back to sequence motifs remains future work and will be critical for connecting latent directions to interpretable biological hypotheses.
 
 \section{Conclusion}
-
-We performed comprehensive mechanistic interpretability analysis of DNABERT-2 for sQTL classification, revealing:
-\begin{enumerate}
-    \item Attention concentrates on variant positions and splice sites
-    \item Layers 8-11 are causally critical for classification
-    \item Five functional circuits specialize in variant processing
-    \item Interpretable features capture biologically meaningful patterns
-\end{enumerate}
-
-These findings provide mechanistic understanding of how genomic foundation models process genetic variants, validate biological plausibility, and suggest interpretability-guided approaches for model improvement. Our analysis framework is generalizable to other genomic models and prediction tasks.
-
-\section*{Acknowledgments}
-We thank the DNABERT-2 and genomic-FM teams for model and data access, and the GTEx Consortium for sQTL data.
+We applied attention analysis, activation patching, circuit-style ablations, and sparse autoencoder decomposition to DNABERT-2 on QTL tasks. The model appears to rely on a late-layer bottleneck with broadly distributed head contributions, and only modest class-specific shifts in attention and SAE features. These findings highlight the challenges of recovering crisp circuits in genomic transformers and motivate further work on motif-level attribution and more targeted circuit discovery methods in this domain.
 
 \bibliographystyle{unsrtnat}
 \bibliography{references}

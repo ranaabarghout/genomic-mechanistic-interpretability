@@ -4,10 +4,6 @@ root/
 *.fa
 *.fai
 
-# Outputs
-outputs/
-checkpoint_analysis/
-
 # Python cache
 __pycache__/
 *.pyc
@@ -27,6 +23,9 @@ ENV/
 *.swp
 *.swo
 *~
+
+# Archive
+scripts/archive/
 
 # OS
 .DS_Store

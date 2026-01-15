@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 # Add genomic-FM to path - need both root (for package) and src (for direct imports)
-GENOMIC_FM_ROOT = Path(__file__).parent.parent.parent.parent / "genomic-FM"
+GENOMIC_FM_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "genomic-FM"
 GENOMIC_FM_PATH = GENOMIC_FM_ROOT / "src"
 for path in [str(GENOMIC_FM_ROOT), str(GENOMIC_FM_PATH)]:
     if path not in sys.path:

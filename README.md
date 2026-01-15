@@ -1,14 +1,14 @@
 # Genomic Mechanistic Interpretability
 
-Mechanistic interpretability analysis of genomic foundation models using attention visualization, activation patching, circuit discovery, and sparse autoencoders.
+Mechanistic interpretability analysis of genomic foundation models using attention visualization, activation patching, circuit discovery, and sparse autoencoders. This project analyzes **DNA-BERT-6** on **sQTL** (splicing QTL) and **eQTL** (expression QTL) variants to understand how the model processes functional genomic variants.
 
 ## Features
 
-- **Multi-Dataset Support**: sQTL, eQTL, ClinVar, GWAS, MAVE, and more
-- **4 Analysis Methods**:
+- **Model**: DNA-BERT-6 (6-layer BERT model trained on genomic sequences)
+- **Primary Datasets**: sQTL and eQTL variants from GTEx
+- **3 Analysis Methods**:
   - Attention visualization and pattern analysis
   - Activation patching for causal analysis
-  - Circuit discovery and ablation studies
   - Sparse autoencoder for feature learning
 
 ## Quick Start
@@ -30,24 +30,14 @@ git clone https://github.com/ranaabarghout/genomic-FM.git
 
 ### Basic Usage
 
-**Run complete analysis on sQTL data:**
+**Run complete analysis on sQTL data (1000 samples):**
 ```bash
-python scripts/run_complete_analysis.py --num-samples 200 --train-sae
+python scripts/run_multi_dataset_analysis.py --dataset sqtl --num-samples 1000 --mechanistic-attention --train-sae --sae-epochs 50
 ```
 
-**Run on other datasets:**
+**Run complete analysis on eQTL data (1000 samples):**
 ```bash
-# eQTL (Expression QTL)
-python scripts/run_multi_dataset_analysis.py --dataset eqtl --num-samples 200 --train-sae
-
-# ClinVar (Pathogenic variants)
-python scripts/run_multi_dataset_analysis.py --dataset clinvar --num-samples 200
-
-# GWAS (Trait-associated variants)
-python scripts/run_multi_dataset_analysis.py --dataset gwas --num-samples 200
-
-# MAVE (Experimental variant effects)
-python scripts/run_multi_dataset_analysis.py --dataset mave --num-samples 200
+python scripts/run_multi_dataset_analysis.py --dataset eqtl --num-samples 1000 --mechanistic-attention --train-sae --sae-epochs 50
 ```
 
 **Quick test mode (50 samples, ~3 min):**
@@ -55,34 +45,42 @@ python scripts/run_multi_dataset_analysis.py --dataset mave --num-samples 200
 python scripts/run_multi_dataset_analysis.py --dataset eqtl --quick-test --train-sae
 ```
 
+
 ## Project Structure
 
 ```
 genomic-mechanistic-interpretability/
 ├── src/
 │   ├── data/              # Data loaders for each dataset
-│   ├── interpretability/  # Analysis methods (attention, patching, SAE, etc.)
+│   ├── interpretability/  # Analysis modules (attention, patching, SAE, circuit)
 │   └── models/            # Model loading utilities
 ├── scripts/               # Executable analysis scripts
-│   ├── run_complete_analysis.py      # Full sQTL analysis
-│   ├── run_multi_dataset_analysis.py # Universal multi-dataset analysis
-│   ├── run_attention_analysis.py     # Attention-only analysis
-│   ├── run_activation_patching.py    # Patching-only analysis
-│   ├── run_circuit_analysis.py       # Circuit discovery only
-│   └── run_sparse_autoencoder.py     # SAE training only
+│   ├── run_multi_dataset_analysis.py    # Main unified analysis pipeline
+│   ├── run_hidden_state_analysis.py     # Hidden state analysis only
+│   ├── run_mechanistic_attention_analysis.py  # Attention analysis only
+│   ├── run_activation_patching.py       # Activation patching only
+│   ├── run_circuit_analysis.py          # Circuit discovery only
+│   ├── run_sparse_autoencoder.py        # SAE training only
+│   └── archive/                          # Legacy scripts
 ├── outputs/               # Analysis results and visualizations
-└── notebooks/             # Jupyter notebooks for exploration
+│   ├── eqtl_analysis/    # eQTL analysis outputs
+│   └── sqtl_analysis/    # sQTL analysis outputs
+├── report/                # LaTeX report template and figures
+├── docs/                  # Documentation
+└── root/data/             # Data storage directory
 ```
 
 ## Supported Datasets
 
-| Dataset | Description | Command Flag |
-|---------|-------------|--------------|
-| **sQTL** | Splicing QTL variants | `--dataset sqtl` |
-| **eQTL** | Expression QTL variants | `--dataset eqtl` |
-| **ClinVar** | Pathogenic/benign variants | `--dataset clinvar` |
-| **GWAS** | Trait-associated variants | `--dataset gwas` |
-| **MAVE** | Experimental variant effects | `--dataset mave` |
+| Dataset | Description | Status |
+|---------|-------------|--------|
+| **sQTL** | Splicing QTL variants from GTEx | ✅ Available |
+| **eQTL** | Expression QTL variants from GTEx | ✅ Available |
+| **ClinVar** | Pathogenic/benign variants | 🔜 Future support |
+| **GWAS** | Trait-associated variants | 🔜 Future support |
+| **MAVE** | Experimental variant effects | 🔜 Future support |
+
+Currently, the analysis pipeline is optimized for **sQTL** and **eQTL** variants. Support for additional datasets (ClinVar, GWAS, MAVE) will be added in future releases.
 
 ## Analysis Methods
 
@@ -92,11 +90,11 @@ Analyzes attention patterns to understand which sequence positions the model foc
 ### 2. Activation Patching
 Causal intervention analysis to identify which model components are critical for predictions.
 
-### 3. Circuit Discovery
-Discovers functional circuits of attention heads that work together for specific tasks.
-
-### 4. Sparse Autoencoder
+### 3. Sparse Autoencoder
 Learns interpretable features from model activations to understand internal representations.
+
+### 4. Circuit Discovery (Work in Progress)
+Will discover functional circuits of attention heads that work together for specific tasks. This analysis method will be available in future releases.
 
 ## Output
 
@@ -111,12 +109,14 @@ Results are saved to `outputs/<dataset>_analysis/analysis_<timestamp>/`
 ## Common Options
 
 ```bash
---dataset       Dataset to analyze (eqtl, clinvar, gwas, mave)
---num-samples   Number of samples to analyze (default: 200)
---quick-test    Fast test with 50 samples (~3 min)
---train-sae     Train sparse autoencoder (adds ~2 min)
---sae-epochs    Number of SAE training epochs (default: 50)
---output-dir    Custom output directory
+--dataset            Dataset to analyze (sqtl, eqtl, clinvar, gwas, mave)
+--num-samples        Number of samples to analyze (default: 200)
+--mechanistic-attention  Use enhanced mechanistic attention analysis
+--train-sae          Train sparse autoencoder (adds ~2 min)
+--sae-epochs         Number of SAE training epochs (default: 50)
+--run-circuit        Run circuit analysis (NOT CURRENTLY RECOMMENDED, optional)
+--quick-test         Fast test with 50 samples (~3 min)
+--output-dir         Custom output directory
 ```
 
 ## Requirements
@@ -124,7 +124,7 @@ Results are saved to `outputs/<dataset>_analysis/analysis_<timestamp>/`
 - Python 3.8+
 - PyTorch 2.0+
 - Transformers (Hugging Face)
-- DNABERT-2 model (auto-downloaded)
+- DNA-BERT-6 model (zhihan1996/DNA_bert_6, auto-downloaded)
 - genomic-FM repository (for data loaders)
 
 See `requirements.txt` for full dependencies.
@@ -134,10 +134,11 @@ See `requirements.txt` for full dependencies.
 If you use this code, please cite:
 
 ```bibtex
-@article{your-paper,
-  title={Mechanistic Interpretability of Genomic Foundation Models},
-  author={Your Name},
-  year={2026}
+@software{barghout2026genomic,
+  title={Genomic Mechanistic Interpretability},
+  author={Barghout, Rana A.},
+  year={2026},
+  url={https://github.com/ranaabarghout/genomic-mechanistic-interpretability}
 }
 ```
 

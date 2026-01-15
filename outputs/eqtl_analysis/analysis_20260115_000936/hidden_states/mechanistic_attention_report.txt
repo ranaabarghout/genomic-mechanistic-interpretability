@@ -1,0 +1,45 @@
+======================================================================
+MECHANISTIC ATTENTION ANALYSIS REPORT
+======================================================================
+
+Dataset: eqtl
+Model: zhihan1996/DNA_bert_6
+Samples analyzed: 1000
+Date: 2026-01-15 00:10:41
+
+----------------------------------------------------------------------
+HEAD BEHAVIOR SUMMARY
+----------------------------------------------------------------------
+
+Most focused heads (lowest entropy):
+  Layer  7, Head  7: entropy = 0.0640
+  Layer  7, Head  5: entropy = 0.0668
+  Layer  8, Head  4: entropy = 0.0711
+  Layer  8, Head  6: entropy = 0.1711
+  Layer  8, Head 10: entropy = 0.2854
+
+Most structured heads (highest variance):
+  Layer  7, Head  7: variance = 0.001883
+  Layer  8, Head  4: variance = 0.001875
+  Layer  7, Head  5: variance = 0.001867
+  Layer  8, Head  6: variance = 0.001770
+  Layer  8, Head 10: variance = 0.001646
+
+----------------------------------------------------------------------
+VARIANT ATTENTION STATISTICS (CLS query)
+----------------------------------------------------------------------
+
+Significant heads (p < 0.01): 2/144
+Significant heads (p < 0.05): 3/144
+
+Top 10 most discriminative heads:
+   1. Layer  7, Head  5: p=0.00e+00, effect_size=+0.0000
+   2. Layer  0, Head  0: p=5.40e-03, effect_size=-0.5748
+   3. Layer  1, Head 11: p=3.77e-02, effect_size=+0.4256
+   4. Layer  4, Head  5: p=5.69e-02, effect_size=-0.3892
+   5. Layer  6, Head  4: p=6.14e-02, effect_size=+0.3823
+   6. Layer  1, Head  0: p=7.37e-02, effect_size=+0.3652
+   7. Layer  6, Head 11: p=8.00e-02, effect_size=+0.3574
+   8. Layer  8, Head  9: p=8.75e-02, effect_size=-0.3486
+   9. Layer  5, Head  3: p=1.00e-01, effect_size=-0.3351
+  10. Layer  1, Head 10: p=1.04e-01, effect_size=+0.3315

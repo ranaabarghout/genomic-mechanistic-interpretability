@@ -18,7 +18,7 @@ from typing import List, Tuple, Dict
 from dataclasses import dataclass
 
 # Add genomic-FM to path - need both root (for package) and src (for direct imports)
-GENOMIC_FM_ROOT = Path(__file__).parent.parent.parent.parent / "genomic-FM"
+GENOMIC_FM_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "genomic-FM"
 GENOMIC_FM_SRC = GENOMIC_FM_ROOT / "src"
 for path in [str(GENOMIC_FM_ROOT), str(GENOMIC_FM_SRC)]:
     if path not in sys.path:
@@ -38,6 +38,11 @@ class sQTLSample:
     label_name: str    # "significant" or "not_significant"
     variant_position: int  # Position where ref != alt
 
+    @property
+    def variant_pos(self):
+        """Alias for variant_position (for compatibility)"""
+        return self.variant_position
+
     def __repr__(self):
         return (f"sQTLSample(tissue={self.tissue}, label={self.label_name}, "
                 f"variant_pos={self.variant_position}, seq_len={len(self.ref_sequence)})")
@@ -48,6 +53,7 @@ class OriginalSQTLDataLoader:
 
     def __init__(self,
                  num_samples: int = None,
+                 num_records: int = None,  # Alias for compatibility
                  all_records: bool = False,
                  seq_length: int = 1024,
                  tissue_filter: str = None):
@@ -56,11 +62,13 @@ class OriginalSQTLDataLoader:
 
         Args:
             num_samples: Number of samples to load (None = all)
+            num_records: Alias for num_samples (for compatibility)
             all_records: If True, load all available records
             seq_length: DNA sequence length (default: 1024bp)
             tissue_filter: Filter by tissue type (e.g., "Whole_Blood")
         """
-        self.num_samples = num_samples
+        # Accept either num_samples or num_records
+        self.num_samples = num_samples or num_records
         self.all_records = all_records
         self.seq_length = seq_length
         self.tissue_filter = tissue_filter
@@ -73,6 +81,9 @@ class OriginalSQTLDataLoader:
             "not_significant": 1
         }
         self.label_names = {0: "significant", 1: "not_significant"}
+
+        # Store loaded samples
+        self.samples = []
 
         print(f"Initializing sQTL data loader...")
         print(f"  Sequence length: {seq_length}bp")
@@ -138,6 +149,9 @@ class OriginalSQTLDataLoader:
             tissues[s.tissue] = tissues.get(s.tissue, 0) + 1
         print(f"  Tissues: {tissues}")
 
+        # Store samples for later use
+        self.samples = samples
+
         return samples
 
     def _find_variant_position(self, ref_seq: str, alt_seq: str) -> int:
@@ -154,6 +168,10 @@ class OriginalSQTLDataLoader:
         else:
             # Multiple differences - return middle position
             return differences[len(differences) // 2]
+
+    def get_label_name(self, label: int) -> str:
+        """Get human-readable label name"""
+        return self.label_names.get(label, "unknown")
 
     def get_statistics(self, samples: List[sQTLSample]) -> Dict:
         """Get dataset statistics"""
@@ -191,8 +209,10 @@ class OriginalSQTLDataLoader:
 
         return stats
 
-    def print_statistics(self, samples: List[sQTLSample]):
+    def print_statistics(self, samples: List[sQTLSample] = None):
         """Print formatted statistics"""
+        if samples is None:
+            samples = self.samples
         stats = self.get_statistics(samples)
 
         print("\n" + "="*60)
@@ -278,6 +298,10 @@ def demo_usage():
             print(f"    Alt: {sample.alt_sequence[max(0,pos-5):pos+6]}")
 
     return samples
+
+
+# Alias for compatibility with generic data loader
+sQTLDataLoader = OriginalSQTLDataLoader
 
 
 if __name__ == "__main__":

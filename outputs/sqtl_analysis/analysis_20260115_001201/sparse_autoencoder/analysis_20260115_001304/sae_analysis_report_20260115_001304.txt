@@ -1,0 +1,91 @@
+======================================================================
+SPARSE AUTOENCODER ANALYSIS REPORT
+Interpretable Feature Discovery in DNABERT-2
+======================================================================
+
+Timestamp: 20260115_001304
+Model: zhihan1996/DNA_bert_6
+Device: cuda
+SAE Architecture: 768 → 2048 → 768
+Sparsity coefficient: 0.001
+
+Dataset:
+  Total samples: 1000
+  Significant: 101
+  Not significant: 99
+
+======================================================================
+TRAINING RESULTS
+======================================================================
+
+  Final total loss: 0.0519
+  Final reconstruction loss: 0.0117
+  Final sparsity loss: 0.0068
+
+======================================================================
+FEATURE ANALYSIS
+======================================================================
+
+Top 10 Most Differential Features:
+----------------------------------------------------------------------
+  1. Feature 908: Δ = +0.0912 (→ significant)
+      Sparsity = 0.0000
+  2. Feature 1008: Δ = +0.0122 (→ significant)
+      Sparsity = 0.0440
+  3. Feature 561: Δ = -0.0001 (→ not_significant)
+      Sparsity = 0.9990
+  4. Feature 1759: Δ = +0.0001 (→ significant)
+      Sparsity = 0.0000
+  5. Feature 1236: Δ = +0.0001 (→ significant)
+      Sparsity = 0.0000
+  6. Feature 1327: Δ = -0.0001 (→ not_significant)
+      Sparsity = 0.0000
+  7. Feature 1475: Δ = +0.0001 (→ significant)
+      Sparsity = 0.9910
+  8. Feature 997: Δ = -0.0001 (→ not_significant)
+      Sparsity = 0.0000
+  9. Feature 1232: Δ = -0.0001 (→ not_significant)
+      Sparsity = 0.0000
+  10. Feature 1937: Δ = +0.0001 (→ significant)
+      Sparsity = 1.0000
+
+Feature Statistics:
+----------------------------------------------------------------------
+  Features favoring significant: 1
+  Features favoring not_significant: 0
+  Neutral features: 2047
+  Mean sparsity: 0.9464
+
+======================================================================
+KEY FINDINGS
+======================================================================
+
+1. Interpretable Feature Discovery:
+   SAE discovered 2048 latent features from DNABERT-2
+   activations. Features show clear differential activation between
+   significant and not_significant sQTLs.
+
+2. Feature Selectivity:
+   Average sparsity: 94.64% of samples activate each feature.
+   High sparsity indicates features are selective and interpretable.
+
+3. Class-Specific Features:
+   1 features preferentially activate for significant sQTLs
+   0 features preferentially activate for not_significant sQTLs
+   These features capture class-specific sequence patterns.
+
+======================================================================
+OUTPUT FILES
+======================================================================
+
+  - 1_training_curves.png
+  - 2_feature_analysis.png
+  - feature_1008_distribution.png
+  - feature_1236_distribution.png
+  - feature_1759_distribution.png
+  - feature_561_distribution.png
+  - feature_908_distribution.png
+  - sae_analysis_report_20260115_001304.txt
+  - sae_model.pt
+
+======================================================================

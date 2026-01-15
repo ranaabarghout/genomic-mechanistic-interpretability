@@ -1,44 +1,106 @@
 """Load pretrained genomic foundation model and fine-tuned checkpoints."""
 import torch
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModel, BertModel, BertTokenizer
 from pathlib import Path
 import sys
 from typing import Optional, Tuple
 
-def load_base_model(model_name: str, device: str = "cuda" if torch.cuda.is_available() else "cpu"):
-    """Load base DNABERT-2 model.
+# Global cache for loaded models to avoid reloading
+_MODEL_CACHE = {}
+
+
+class DNABERTTokenizerWrapper:
+    """Wrapper for DNABERT tokenizer that handles k-mer conversion."""
+
+    def __init__(self, tokenizer, kmer_size=6):
+        self.tokenizer = tokenizer
+        self.kmer_size = kmer_size
+
+    def convert_to_kmers(self, sequence):
+        """Convert DNA sequence to space-separated k-mers."""
+        kmers = []
+        for i in range(len(sequence) - self.kmer_size + 1):
+            kmers.append(sequence[i:i+self.kmer_size])
+        return ' '.join(kmers)
+
+    def __call__(self, text, **kwargs):
+        """Tokenize DNA sequence (convert to k-mers first)."""
+        if isinstance(text, str):
+            text = self.convert_to_kmers(text)
+        elif isinstance(text, list):
+            text = [self.convert_to_kmers(s) for s in text]
+        return self.tokenizer(text, **kwargs)
+
+    def tokenize(self, text):
+        """Tokenize DNA sequence."""
+        if isinstance(text, str):
+            text = self.convert_to_kmers(text)
+        return self.tokenizer.tokenize(text)
+
+    def __getattr__(self, name):
+        """Delegate other methods to underlying tokenizer."""
+        return getattr(self.tokenizer, name)
+
+def load_base_model(model_name: str, device: str = "cuda" if torch.cuda.is_available() else "cpu", use_standard_bert: bool = False):
+    """Load base genomic or standard BERT model.
 
     Args:
-        model_name: Model name or path (e.g., 'zhihan1996/DNABERT-2-117M')
+        model_name: Model name or path
+                   - 'zhihan1996/DNABERT-2-117M' for DNABERT-2 (genomic, no attention outputs)
+                   - 'google-bert/bert-base-uncased' for standard BERT (full attention support)
         device: Device to load model on
+        use_standard_bert: If True, use standard BERT APIs (enables attention outputs)
 
     Returns:
-        Tuple of (model, tokenizer)
+        Tuple of (model, tokenizer, config)
     """
     print(f"Loading base model: {model_name}")
 
-    # Load tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    # Detect if this is standard BERT
+    if 'bert-base' in model_name.lower() or 'bert-large' in model_name.lower():
+        use_standard_bert = True
 
-    # DNABERT-2 is a BertForMaskedLM model - load it properly
-    from transformers import BertForMaskedLM
-    full_model = BertForMaskedLM.from_pretrained(model_name, trust_remote_code=True)
+    # Check if already loaded
+    cache_key = f"{model_name}_{device}_{use_standard_bert}"
+    if cache_key in _MODEL_CACHE:
+        print(f"  Using cached model")
+        return _MODEL_CACHE[cache_key]
 
-    # Extract the base BERT model (without MLM head)
-    model = full_model.bert
+    if use_standard_bert:
+        # Load standard BERT (supports attention outputs)
+        print("  Using standard BERT API (attention outputs enabled)")
+        tokenizer = BertTokenizer.from_pretrained(model_name)
+        model = BertModel.from_pretrained(model_name)
+    else:
+        # Load DNABERT-2 or other custom models
+        print("  Using AutoModel API (may not support attention outputs)")
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
 
-    # Enable attention and hidden states output
-    model.config.output_attentions = True
-    model.config.output_hidden_states = True
+        # Wrap tokenizer for DNABERT models (need k-mer conversion)
+        if 'DNA_bert' in model_name or 'DNABERT' in model_name:
+            print("  Wrapping tokenizer with k-mer conversion (k=6)")
+            tokenizer = DNABERTTokenizerWrapper(tokenizer, kmer_size=6)
+
+    # Enable attention and hidden states output (may not work for all models)
+    if hasattr(model.config, 'output_attentions'):
+        model.config.output_attentions = True
+    if hasattr(model.config, 'output_hidden_states'):
+        model.config.output_hidden_states = True
 
     model.to(device)
     model.eval()
 
     config = model.config
     print(f"Model loaded on {device}")
-    print(f"Config: {config.num_hidden_layers} layers, {config.num_attention_heads} heads")
+    if hasattr(config, 'num_hidden_layers') and hasattr(config, 'num_attention_heads'):
+        print(f"Config: {config.num_hidden_layers} layers, {config.num_attention_heads} heads")
 
-    return model, tokenizer, config
+    # Cache for reuse
+    result = (model, tokenizer, config)
+    _MODEL_CACHE[cache_key] = result
+
+    return result
 
 
 def load_finetuned_model(

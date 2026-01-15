@@ -1,19 +1,15 @@
 """
-sQTL Attention Analysis with Original Sequences
+QTL Attention Analysis with Original Sequences
 ==============================================
-Analyzes attention patterns in DNABERT-2 model on original sQTL DNA sequences.
+Analyzes attention patterns in DNABERT-2 model on original sQTL and eQTL DNA sequences.
 
-This script:
+This module:
 1. Loads original DNA sequences (not PCA-transformed)
 2. Tokenizes sequences using DNABERT-2 tokenizer
 3. Computes attention weights across all layers
 4. Visualizes which nucleotides the model focuses on
-5. Compares attention between significant vs non-significant sQTLs
+5. Compares attention between significant vs non-significant sQTLs/eQTLs
 """
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import torch
 import numpy as np
@@ -34,8 +30,8 @@ sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (14, 8)
 
 
-class sQTLAttentionAnalyzer:
-    """Analyze attention patterns on original sQTL sequences"""
+class QTLAttentionAnalyzer:
+    """Analyze attention patterns on original QTL sequences"""
 
     def __init__(self,
                  checkpoint_path: str = None,
@@ -392,7 +388,7 @@ class sQTLAttentionAnalyzer:
 
         with open(report_file, 'w') as f:
             f.write("="*60 + "\n")
-            f.write("sQTL Attention Analysis Report\n")
+            f.write("QTL Attention Analysis Report\n")
             f.write("="*60 + "\n\n")
 
             f.write(f"Model: {self.model_name}\n")
@@ -429,32 +425,3 @@ class sQTLAttentionAnalyzer:
             f.write("="*60 + "\n")
 
         print(f"\nReport saved: {report_file}")
-
-
-def main():
-    """Main execution"""
-    import argparse
-
-    parser = argparse.ArgumentParser(description="sQTL Attention Analysis")
-    parser.add_argument('--checkpoint', type=str, default=None,
-                       help='Path to fine-tuned checkpoint')
-    parser.add_argument('--num-samples', type=int, default=50,
-                       help='Number of samples to analyze')
-    parser.add_argument('--output-dir', type=str, default='outputs/sqtl_attention_original',
-                       help='Output directory')
-
-    args = parser.parse_args()
-
-    # Initialize analyzer
-    analyzer = sQTLAttentionAnalyzer(
-        checkpoint_path=args.checkpoint,
-        num_samples=args.num_samples,
-        output_dir=args.output_dir
-    )
-
-    # Run analysis
-    analyzer.run_full_analysis()
-
-
-if __name__ == "__main__":
-    main()

@@ -1,0 +1,95 @@
+======================================================================
+ACTIVATION PATCHING ANALYSIS REPORT
+Causal Analysis of DNABERT-2 for sQTL Classification
+======================================================================
+
+Timestamp: 20260115_001300
+Model: zhihan1996/DNA_bert_6
+Device: cuda
+Architecture: 12 layers, 12 heads
+
+Dataset:
+  Total samples analyzed: 1000
+  Significant sQTLs: 501
+  Not significant sQTLs: 499
+
+======================================================================
+ANALYSES PERFORMED
+======================================================================
+
+1. LAYER-WISE PATCHING
+----------------------------------------------------------------------
+  Pairs tested: 20
+  Most important layers (highest patching effect):
+    1. Layer 12: Effect = 812.1219
+    2. Layer 11: Effect = 0.0000
+    3. Layer 10: Effect = 0.0000
+
+  Interpretation: These layers show the largest change when
+  patched from not_significant to significant sQTLs, suggesting
+  they encode critical features for classification.
+
+2. POSITION-BASED PATCHING
+----------------------------------------------------------------------
+  Samples tested: 10
+  Positions tested: 20
+  Most important positions:
+    1. Position 253: Effect = 2.8355
+    2. Position 262: Effect = 2.8351
+    3. Position 250: Effect = 2.8287
+
+  Interpretation: These positions, when patched, cause the
+  largest representation changes. Typically centered around
+  the variant site.
+
+3. ATTENTION HEAD IMPORTANCE
+----------------------------------------------------------------------
+  Significant samples tested: 15
+  Not significant samples tested: 15
+  Most differential attention heads:
+    Layer 8, Head 1: Δ = +6.6476 (→ sig)
+    Layer 8, Head 10: Δ = +3.4986 (→ sig)
+    Layer 11, Head 5: Δ = -3.3444 (→ not_sig)
+    Layer 11, Head 10: Δ = +3.2392 (→ sig)
+    Layer 8, Head 4: Δ = +3.1254 (→ sig)
+
+  Interpretation: Heads with large positive differences show
+  stronger concentration in significant sQTLs; negative differences
+  indicate importance for not_significant classification.
+
+4. CAUSAL TRACING
+----------------------------------------------------------------------
+  Samples traced: 3
+  Tracked information flow from variant position through layers.
+  See visualizations for detailed per-sample traces.
+
+======================================================================
+KEY FINDINGS
+======================================================================
+
+1. Critical Layers:
+   Layers 12, 11, 10 are most important for sQTL classification
+   based on patching effects. These layers likely encode
+   sequence features that distinguish functional variants.
+
+2. Spatial Importance:
+   Positions near the sequence center (where variants are
+   typically located) show highest patching effects, confirming
+   the model focuses on variant-proximal context.
+
+3. Attention Patterns:
+   Specific attention heads show differential concentration
+   between significant and not_significant sQTLs, suggesting
+   specialized roles in variant interpretation.
+
+======================================================================
+OUTPUT FILES
+======================================================================
+
+  - 1_layer_patching_effects.png
+  - 2_position_patching_effects.png
+  - 3_attention_head_importance.png
+  - 4_causal_traces.png
+  - activation_patching_report_20260115_001300.txt
+
+======================================================================

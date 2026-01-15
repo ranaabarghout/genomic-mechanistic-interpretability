@@ -1,0 +1,23 @@
+======================================================================
+MECHANISTIC INTERPRETABILITY ANALYSIS: SQTL
+Splicing QTL variants (splice-altering)
+======================================================================
+
+Analysis Timestamp: 20260115_001318
+Samples Analyzed: 1000
+Quick Test Mode: False
+
+======================================================================
+ANALYSES COMPLETED
+======================================================================
+
+  1. ✓ EDA
+  2. ✓ ATTENTION
+  3. ✓ ACTIVATION PATCHING
+  4. ✗ CIRCUIT ANALYSIS
+  5. ✓ SPARSE AUTOENCODER
+  6. ✓ CIRCUIT
+
+======================================================================
+Results saved to: outputs/sqtl_analysis/analysis_20260115_001201
+======================================================================

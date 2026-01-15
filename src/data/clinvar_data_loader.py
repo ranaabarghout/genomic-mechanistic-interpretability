@@ -2,14 +2,19 @@
 ClinVar data loader for mechanistic interpretability analysis.
 Analyzes pathogenic vs benign variant classification.
 """
+from pathlib import Path
 from typing import List, Optional
-from tqdm import tqdm
-from data.generic_data_loader import GenericDataLoader, GenomicSample, GENOMIC_FM_PATH
-
 import sys
-if str(GENOMIC_FM_PATH) not in sys.path:
-    sys.path.insert(0, str(GENOMIC_FM_PATH))
+from tqdm import tqdm
 
+# Add genomic-FM to path before any imports from it
+GENOMIC_FM_ROOT = Path(__file__).resolve().parent.parent.parent.parent / "genomic-FM"
+GENOMIC_FM_SRC = GENOMIC_FM_ROOT / "src"
+for path in [str(GENOMIC_FM_ROOT), str(GENOMIC_FM_SRC)]:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+from data.generic_data_loader import GenericDataLoader, GenomicSample
 from src.dataloader.data_wrapper import ClinVarDataWrapper
 
 
